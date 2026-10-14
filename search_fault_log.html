@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search ALL Fault Log - Natural Avenue</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Include sql.js from CDN for browser-based SQLite execution -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 100;
+        }
+
+        .brand-link {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .brand-logo {
+            height: 38px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-link h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .brand-link span.badge {
+            font-size: 11px;
+            background: #eef2ff;
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 1px;
+            letter-spacing: 0.2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        /* Dropdown Menu Styles for "Files" */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropbtn {
+            background: none;
+            border: none;
+            text-decoration: none;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: #eef2ff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #ffffff;
+            min-width: 220px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+            margin-top: 6px;
+        }
+
+        .dropdown-content a {
+            color: var(--text-main);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .dropdown-content a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f8fafc;
+            color: var(--primary);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .nav-links > a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 12px;
+        }
+
+        .nav-links > a:hover {
+            color: var(--text-main);
+        }
+
+        .logout-btn {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #fecaca;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .form-group select, .form-group input {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: #fff;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .notes-legend {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .notes-legend span {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            font-style: italic;
+            background-color: #f8fafc;
+        }
+
+        .timestamp-display {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="brand">
+            <a href="dashboard.html" class="brand-link">
+                <img src="cslogo.png" alt="Special Cash Sweep Logo" class="brand-logo">
+                <div class="brand-text">
+                    <div class="brand-title-container">
+                        <h1>Fault Log Tracker</h1>
+                        <span class="badge">Enterprise</span>
+                    </div>
+                    <span class="brand-subtitle">Natural Avenue Sdn Bhd</span>
+                </div>
+            </a>
+        </div>
+        <nav class="nav-links">
+            <div class="dropdown">
+                <button class="dropbtn">Files ▼</button>
+                <div class="dropdown-content">
+                    <a href="dashboard.html">Maintain Fault Log</a>
+                    <a href="search_fault_log.html">Search ALL Fault Log</a>
+                    <a href="#companySelect">View Agency</a>
+                    <a href="#">Maintain Fault Log Type</a>
+                    <a href="#companySelect">View Ticketing Clerk</a>
+                </div>
+            </div>
+            <a href="#">Listing</a>
+            <a href="#">Reports</a>
+        </nav>
+        <button class="logout-btn">Logout</button>
+    </header>
+
+    <main class="container">
+        
+        <!-- Ticketing Clerk Viewing Card -->
+        <div class="card">
+            <div class="card-title">Ticketing Clerk Viewing</div>
+            
+            <div class="form-group" style="max-width: 450px;">
+                <label for="companySelect">Select Company</label>
+                <select id="companySelect">
+                    <option value="">-- Choose a Company --</option>
+                </select>
+            </div>
+
+            <div class="notes-legend">
+                <span>Note:</span>
+                <span>TC-TICKETING CLERK</span>
+                <span>SV-SUPERVISOR</span>
+                <span>ON-OWNER</span>
+                <span>NS-NA STAFF</span>
+                <span>PO-PRINCIPAL OFFICER</span>
+                <span>AP-AUTHORISED PERSON</span>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Name</th>
+                            <th>Post</th>
+                            <th>Start Date</th>
+                            <th>Resigned Date</th>
+                            <th>Trained Date</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="personnelTableBody">
+                        <tr><td colspan="9" class="empty-state">Select a company above to display personnel records.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Search ALL Fault Logs For Card -->
+        <div class="card">
+            <div class="card-title">ALL Fault Logs For :</div>
+            
+            <div class="form-grid" style="max-width: 800px;">
+                <div class="form-group">
+                    <label>Location</label>
+                    <select id="searchLocation">
+                        <option value="KUCHING">KUCHING</option>
+                        <option value="MIRI">MIRI</option>
+                        <option value="SIBU">SIBU</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Day</label>
+                    <select id="searchDay">
+                        <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+                        <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                        <option value="07">07</option><option value="08">08</option><option value="09">09</option>
+                        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                        <option value="13">13</option><option value="14" selected>14</option><option value="15">15</option>
+                        <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+                        <option value="19">19</option><option value="20">20</option><option value="21">21</option>
+                        <option value="22">22</option><option value="23">23</option><option value="24">24</option>
+                        <option value="25">25</option><option value="26">26</option><option value="27">27</option>
+                        <option value="28">28</option><option value="29">29</option><option value="30">30</option>
+                        <option value="31">31</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Month</label>
+                    <select id="searchMonth">
+                        <option value="Jan" selected>Jan</option>
+                        <option value="Feb">Feb</option>
+                        <option value="Mar">Mar</option>
+                        <option value="Apr">Apr</option>
+                        <option value="May">May</option>
+                        <option value="Jun">Jun</option>
+                        <option value="Jul">Jul</option>
+                        <option value="Aug">Aug</option>
+                        <option value="Sep">Sep</option>
+                        <option value="Oct">Oct</option>
+                        <option value="Nov">Nov</option>
+                        <option value="Dec">Dec</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Year</label>
+                    <select id="searchYear">
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="timestamp-display" id="liveTimestamp">14/10/2026 17:20:12</div>
+
+            <div class="card-title" style="margin-top: 24px; font-size: 15px;">Fault Details</div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fault ID</th>
+                            <th>Description</th>
+                            <th>HWID</th>
+                            <th>CHWID</th>
+                            <th>TKT</th>
+                            <th>TSN</th>
+                            <th>Bet Number</th>
+                            <th>Amt(RM)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faultDetailsTableBody">
+                        <tr><td colspan="8" class="empty-state">No lists</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add New Fault Details Sub-form -->
+            <div style="margin-top: 24px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="font-weight: 600; font-size: 13px; margin-bottom: 12px; color: var(--text-main);">Add New Fault Details</div>
+                <form id="newFaultDetailForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Fault Log ID</label>
+                            <input type="text" id="newLogId" placeholder="Log ID" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Fault Description</label>
+                            <select id="newDescription">
+                                <option value="3D Selling Not Allowed">3D Selling Not Allowed</option>
+                                <option value="Printer Error">Printer Error</option>
+                                <option value="Paper Roll Finish">Paper Roll Finish</option>
+                                <option value="Connection Timeout">Connection Timeout</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>HWID</label>
+                            <input type="text" id="newHwid">
+                        </div>
+                        <div class="form-group">
+                            <label>CHWID</label>
+                            <input type="text" id="newChwid">
+                        </div>
+                        <div class="form-group">
+                            <label>TKT</label>
+                            <input type="text" id="newTkt">
+                        </div>
+                        <div class="form-group">
+                            <label>TSN</label>
+                            <input type="text" id="newTsn">
+                        </div>
+                        <div class="form-group">
+                            <label>Bet Number</label>
+                            <input type="text" id="newBetNumber">
+                        </div>
+                        <div class="form-group">
+                            <label>Amt(RM)</label>
+                            <input type="number" step="0.01" id="newAmount">
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end;">
+                            <button type="submit" class="btn-primary" style="margin-top: auto;">Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let db = null;
+
+        // Live Timestamp updater
+        function updateTimestamp() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            const h = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('liveTimestamp').textContent = `${d}/${m}/${y} ${h}:${min}:${s}`;
+        }
+        setInterval(updateTimestamp, 1000);
+        updateTimestamp();
+
+        async function initDatabase() {
+            try {
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+
+                const response = await fetch('timetracker.db');
+                const buffer = await response.arrayBuffer();
+                db = new SQL.Database(new Uint8Array(buffer));
+
+                loadCompanies();
+            } catch (error) {
+                console.error("Error loading database in browser:", error);
+            }
+        }
+
+        function loadCompanies() {
+            if (!db) return;
+            
+            const stmt = db.prepare("SELECT company_name FROM companies ORDER BY company_name");
+            const select = document.getElementById('companySelect');
+            
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                let opt = document.createElement('option');
+                opt.value = row.company_name;
+                opt.textContent = row.company_name;
+                select.appendChild(opt);
+            }
+            stmt.free();
+        }
+
+        document.getElementById('companySelect').addEventListener('change', function() {
+            const selectedCompany = this.value;
+            const tbody = document.getElementById('personnelTableBody');
+            tbody.innerHTML = ''; 
+
+            if (!selectedCompany) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-state">Select a company above to display personnel records.</td></tr>`;
+                return;
+            }
+
+            const stmt = db.prepare(
+                `SELECT status, staff_id, title, staff_name, post, start_date, resigned_date, trained_date, remarks 
+                 FROM company_personnel WHERE company_name = :company`
+            );
+            stmt.bind({ ':company': selectedCompany });
+
+            let hasResults = false;
+            while (stmt.step()) {
+                hasResults = true;
+                const person = stmt.getAsObject();
+                let row = `<tr>
+                    <td><strong>${person.status || ''}</strong></td>
+                    <td>${person.staff_id || ''}</td>
+                    <td>${person.title || ''}</td>
+                    <td>${person.staff_name || ''}</td>
+                    <td>${person.post || ''}</td>
+                    <td>${person.start_date || ''}</td>
+                    <td>${person.resigned_date || ''}</td>
+                    <td>${person.trained_date || ''}</td>
+                    <td>${person.remarks || ''}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            }
+            stmt.free();
+
+            if (!hasResults) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No personnel records found for this company.</td></tr>`;
+            }
+        });
+
+        // Add New Fault Detail row locally
+        document.getElementById('newFaultDetailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const tbody = document.getElementById('faultDetailsTableBody');
+            
+            // Remove empty state if present
+            if (tbody.querySelector('.empty-state')) {
+                tbody.innerHTML = '';
+            }
+
+            const logId = document.getElementById('newLogId').value;
+            const desc = document.getElementById('newDescription').value;
+            const hwid = document.getElementById('newHwid').value || '-';
+            const chwid = document.getElementById('newChwid').value || '-';
+            const tkt = document.getElementById('newTkt').value || '-';
+            const tsn = document.getElementById('newTsn').value || '-';
+            const bet = document.getElementById('newBetNumber').value || '-';
+            const amt = document.getElementById('newAmount').value ? parseFloat(document.getElementById('newAmount').value).toFixed(2) : '0.00';
+
+            let row = `<tr>
+                <td>${logId}</td>
+                <td>${desc}</td>
+                <td>${hwid}</td>
+                <td>${chwid}</td>
+                <td>${tkt}</td>
+                <td>${tsn}</td>
+                <td>${bet}</td>
+                <td>${amt}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+
+            alert('Fault detail added successfully!');
+            this.reset();
+        });
+
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+
+        initDatabase();
+    </script>
+</body>
+</html>

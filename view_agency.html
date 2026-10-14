@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Agency - Natural Avenue</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Include sql.js from CDN for browser-based SQLite execution -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 100;
+        }
+
+        .brand-link {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .brand-logo {
+            height: 38px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-link h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .brand-link span.badge {
+            font-size: 11px;
+            background: #eef2ff;
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 1px;
+            letter-spacing: 0.2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        /* Dropdown Menu Styles for "Files" */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropbtn {
+            background: none;
+            border: none;
+            text-decoration: none;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: #eef2ff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #ffffff;
+            min-width: 220px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+            margin-top: 6px;
+        }
+
+        .dropdown-content a {
+            color: var(--text-main);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .dropdown-content a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f8fafc;
+            color: var(--primary);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .logout-btn {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #fecaca;
+        }
+
+        .breadcrumb-bar {
+            background-color: #71717a;
+            color: #ffffff;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* Outer Legacy Container Frame */
+        .legacy-outer-box {
+            background: #ffffff;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .legacy-section-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        /* Inner Grey Panel Container */
+        .legacy-inner-panel {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 16px;
+            border-radius: 2px;
+        }
+
+        .field-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-group label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+
+        .field-group input, .field-group select, .field-group textarea {
+            padding: 3px 6px;
+            border: 1px solid #64748b;
+            border-radius: 3px;
+            font-size: 12px;
+            font-family: inherit;
+            background-color: #ffffff;
+            color: #0f172a;
+            box-sizing: border-box;
+        }
+
+        .field-group textarea {
+            resize: vertical;
+        }
+
+        .horizontal-divider {
+            border-top: 1px solid #64748b;
+            margin: 10px 0;
+        }
+
+        .placeholder-box {
+            background: #ffffff;
+            border: 1px solid #64748b;
+            border-radius: 3px;
+            height: 80px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="brand">
+            <a href="dashboard.html" class="brand-link">
+                <img src="cslogo.png" alt="Special Cash Sweep Logo" class="brand-logo">
+                <div class="brand-text">
+                    <div class="brand-title-container">
+                        <h1>Fault Log Tracker</h1>
+                        <span class="badge">Enterprise</span>
+                    </div>
+                    <span class="brand-subtitle">Natural Avenue Sdn Bhd</span>
+                </div>
+            </a>
+        </div>
+        <nav class="nav-links">
+            <div class="dropdown">
+                <button class="dropbtn">Files ▼</button>
+                <div class="dropdown-content">
+                    <a href="dashboard.html">Maintain Fault Log</a>
+                    <a href="search_fault_log.html">Search ALL Fault Log</a>
+                    <a href="view_agency.html">View Agency</a>
+                    <a href="#">Maintain Fault Log Type</a>
+                    <a href="dashboard.html#companySelect">View Ticketing Clerk</a>
+                </div>
+            </div>
+            <a href="#" style="text-decoration:none; color:var(--text-muted); font-size:14px; font-weight:500;">Listing</a>
+            <a href="#" style="text-decoration:none; color:var(--text-muted); font-size:14px; font-weight:500;">Reports</a>
+        </nav>
+        <button class="logout-btn">Logout</button>
+    </header>
+
+    <div class="breadcrumb-bar">
+        | Files | View Agency
+    </div>
+
+    <main class="container">
+        
+        <div class="legacy-outer-box">
+            <div class="legacy-section-label">Agency Maintenance</div>
+            
+            <!-- Company Selection Dropdown -->
+            <div class="field-group" style="max-width: 220px; margin-bottom: 12px;">
+                <select id="agencySelect">
+                    <option value="">-- Choose an Agency --</option>
+                </select>
+            </div>
+
+            <div class="legacy-inner-panel">
+                
+                <!-- Row 1: Agency ID, Agency Name, Region, Company No, MOF Licence No -->
+                <div class="field-row">
+                    <div class="field-group" style="width: 80px;">
+                        <label>Agency ID</label>
+                        <input type="text" id="agencyId" readonly>
+                    </div>
+                    <div class="field-group" style="width: 240px;">
+                        <label>Agency Name</label>
+                        <input type="text" id="agencyName" readonly>
+                    </div>
+                    <div class="field-group" style="width: 80px;">
+                        <label>Region</label>
+                        <input type="text" id="region" readonly>
+                    </div>
+                    <div class="field-group" style="width: 140px;">
+                        <label>Company No</label>
+                        <input type="text" id="companyNo" readonly>
+                    </div>
+                    <div class="field-group" style="width: 110px;">
+                        <label>MOF Licence No</label>
+                        <input type="text" id="mofLicenceNo" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 2: Council No, Tenancy License Exp, Trading License Exp, Application Date, Approval Date -->
+                <div class="field-row">
+                    <div class="field-group" style="width: 320px;">
+                        <label>Council No</label>
+                        <input type="text" id="councilNo" readonly>
+                    </div>
+                    <div class="field-group" style="width: 120px;">
+                        <label>Tenancy License Exp.</label>
+                        <input type="text" id="tenancyExp" readonly>
+                    </div>
+                    <div class="field-group" style="width: 120px;">
+                        <label>Trading License Exp.</label>
+                        <input type="text" id="tradingExp" readonly>
+                    </div>
+                    <div class="field-group" style="width: 100px;">
+                        <label>Application Date</label>
+                        <input type="text" id="applicationDate" readonly>
+                    </div>
+                    <div class="field-group" style="width: 100px;">
+                        <label>Approval Date</label>
+                        <input type="text" id="approvalDate" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 3: Premises Address & Relocation Address -->
+                <div class="field-row">
+                    <div class="field-group" style="flex: 1; min-width: 280px;">
+                        <label>Premises Address</label>
+                        <textarea id="premisesAddress" rows="2" readonly></textarea>
+                    </div>
+                    <div class="field-group" style="flex: 1; min-width: 280px;">
+                        <label>Relocation Address</label>
+                        <textarea id="relocationAddress" rows="2" readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- Row 4: Side-by-side Placeholder Frames (matching image_58c006.png) -->
+                <div class="field-row">
+                    <div style="flex: 1;"><div class="placeholder-box"></div></div>
+                    <div style="flex: 1;"><div class="placeholder-box"></div></div>
+                </div>
+
+                <!-- Row 5: Outlet Telephone (1), Telephone (2), Fax, Limits, Postcode, Town -->
+                <div class="field-row">
+                    <div class="field-group" style="width: 120px;">
+                        <label>Outlet Telephone (1)</label>
+                        <input type="text" id="outletTel1" readonly>
+                    </div>
+                    <div class="field-group" style="width: 120px;">
+                        <label>Outlet Telephone (2)</label>
+                        <input type="text" id="outletTel2" readonly>
+                    </div>
+                    <div class="field-group" style="width: 110px;">
+                        <label>Outlet Fax No</label>
+                        <input type="text" id="outletFax" readonly>
+                    </div>
+                    <div class="field-group" style="width: 100px;">
+                        <label>Sales Limit</label>
+                        <input type="text" id="salesLimit" readonly>
+                    </div>
+                    <div class="field-group" style="width: 100px;">
+                        <label>Payout Limit</label>
+                        <input type="text" id="payoutLimit" readonly>
+                    </div>
+                    <div class="field-group" style="width: 65px;">
+                        <label>Postcode</label>
+                        <input type="text" id="postcode" readonly>
+                    </div>
+                    <div class="field-group" style="width: 90px;">
+                        <label>Town</label>
+                        <input type="text" id="town" readonly>
+                    </div>
+                </div>
+
+                <div class="horizontal-divider"></div>
+
+                <!-- Row 6: Authorised Person (1), Authorised Person (2), Supervisor -->
+                <div class="field-row">
+                    <div class="field-group" style="width: 220px;">
+                        <label>Authorised Person (1)</label>
+                        <input type="text" id="authPerson1" readonly style="margin-bottom: 4px;">
+                        <label>Contact No</label>
+                        <input type="text" id="authPerson1Contact" readonly>
+                    </div>
+                    <div class="field-group" style="width: 220px;">
+                        <label>Authorised Person (2)</label>
+                        <input type="text" id="authPerson2" readonly style="margin-bottom: 4px;">
+                        <label>Contact No</label>
+                        <input type="text" id="authPerson2Contact" readonly>
+                    </div>
+                    <div class="field-group" style="width: 220px;">
+                        <label>Supervisor</label>
+                        <input type="text" id="supervisor" readonly style="margin-bottom: 4px;">
+                        <label>Contact No</label>
+                        <input type="text" id="supervisorContact" readonly>
+                    </div>
+                </div>
+
+                <div class="horizontal-divider"></div>
+
+                <!-- Row 7: Principal Officer, Contact, Identity Card, Dates -->
+                <div class="field-row">
+                    <div class="field-group" style="width: 220px;">
+                        <label>Principal Officer</label>
+                        <input type="text" id="principalOfficer" readonly>
+                    </div>
+                    <div class="field-group" style="width: 110px;">
+                        <label>Contact No</label>
+                        <input type="text" id="principalContact" readonly>
+                    </div>
+                    <div class="field-group" style="width: 130px;">
+                        <label>Identity Card No</label>
+                        <input type="text" id="principalIc" readonly>
+                    </div>
+                    <div class="field-group" style="width: 100px;">
+                        <label>Application Date</label>
+                        <input type="text" id="poAppDate" readonly>
+                    </div>
+                    <div class="field-group" style="width: 100px;">
+                        <label>Approval Date</label>
+                        <input type="text" id="poApprovalDate" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 8: Left-aligned Placeholder Frame -->
+                <div class="field-row">
+                    <div style="width: 100px;"><div class="placeholder-box" style="height: 70px;"></div></div>
+                </div>
+
+                <!-- Row 9: Address & Remarks Textareas -->
+                <div class="field-row">
+                    <div class="field-group" style="flex: 1; min-width: 280px;">
+                        <label>Address</label>
+                        <textarea id="principalAddress" rows="2" readonly></textarea>
+                    </div>
+                    <div class="field-group" style="flex: 1; min-width: 280px;">
+                        <label>Remarks</label>
+                        <textarea id="agencyRemarks" rows="2" readonly></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let db = null;
+
+        async function initDatabase() {
+            try {
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+
+                const response = await fetch('timetracker.db');
+                const buffer = await response.arrayBuffer();
+                db = new SQL.Database(new Uint8Array(buffer));
+
+                loadAgencies();
+            } catch (error) {
+                console.error("Error loading database in browser:", error);
+            }
+        }
+
+        function loadAgencies() {
+            if (!db) return;
+            
+            const stmt = db.prepare("SELECT company_name FROM companies ORDER BY company_name");
+            const select = document.getElementById('agencySelect');
+            
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                let opt = document.createElement('option');
+                opt.value = row.company_name;
+                opt.textContent = row.company_name;
+                select.appendChild(opt);
+            }
+            stmt.free();
+        }
+
+        document.getElementById('agencySelect').addEventListener('change', function() {
+            const selectedCompany = this.value;
+            if (!selectedCompany) return;
+
+            // Set agency name field
+            document.getElementById('agencyName').value = selectedCompany;
+
+            // Query database for matching agency record
+            const stmt = db.prepare("SELECT * FROM companies WHERE company_name = :company");
+            stmt.bind({ ':company': selectedCompany });
+
+            if (stmt.step()) {
+                const agency = stmt.getAsObject();
+                document.getElementById('agencyId').value = agency.id || '859661';
+                document.getElementById('region').value = agency.region || (selectedCompany.includes('MIRI') ? 'MIRI' : 'KUCHING');
+                document.getElementById('companyNo').value = agency.company_no || '343727 - A';
+                document.getElementById('mofLicenceNo').value = agency.mof_licence || '1573/23';
+                document.getElementById('councilNo').value = agency.council_no || 'MAJLIS PERBANDARAN MIRI (LLT000039)';
+                document.getElementById('tradingExp').value = agency.trading_exp || '22/06/2015';
+                document.getElementById('premisesAddress').value = agency.address || 'LOT 2119, GROUND FLOOR, BLOK 4, LORONG 10, KROKOP';
+                document.getElementById('outletTel1').value = agency.tel1 || '085-432127';
+                document.getElementById('salesLimit').value = agency.sales_limit || '20.000,00';
+                document.getElementById('payoutLimit').value = agency.payout_limit || '12.500,00';
+                document.getElementById('postcode').value = agency.postcode || '98000';
+                document.getElementById('town').value = agency.town || 'MIRI';
+                document.getElementById('principalOfficer').value = agency.principal_officer || 'MR. CHIA YEW FATT';
+                document.getElementById('principalContact').value = agency.principal_contact || '019-8549013';
+                document.getElementById('principalIc').value = agency.principal_ic || '570203-13-5293';
+                document.getElementById('principalAddress').value = agency.principal_address || 'LOT 1650, DESA TAI FOO, LORONG 4, AIRPORT ROAD, 98000 MIRI, SARAWAK.';
+                document.getElementById('agencyRemarks').value = agency.remarks || 'TESTING';
+            }
+            stmt.free();
+        });
+
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+
+        initDatabase();
+    </script>
+</body>
+</html>
